@@ -8,7 +8,7 @@ def main():
     # We especify the directory where we have the files
     files_directory_name = 'Files\\'
     path_to_files = os.getcwd() + '\\' + files_directory_name
-    file_name = 'quijote'  # File name without extension!
+    file_name = 'quijote_campus'  # File name without extension!
 
     # Compressing the file
     file_to_compress = Huffman(filename=file_name + '.txt', path=path_to_files)

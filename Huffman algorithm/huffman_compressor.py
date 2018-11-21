@@ -1,6 +1,44 @@
-import time
+from time import time
 import os
 from collections import Counter
+
+
+def timer(f):
+    '''
+    This function will be used as a decorator
+    to show the how lang takes a function to run
+
+    '''
+    def inner_function(*args, **kwargs):
+        t1 = time()
+        rf = f(*args, **kwargs)
+        t2 = time()
+        print('{.__name__} has been executed in {} seconds'.format(
+            f, round(t2 - t1, 3)))
+        return rf
+    return inner_function
+
+
+def average(n):
+    '''
+    This function will be used as a decorator to
+    calculate how long takes a function (in an
+    average of n) to run
+
+    '''
+    def inner(f):
+        def make_average(*args, **kwargs):
+            av = 0
+            for _ in range(n):
+                t1 = time()
+                rf = f(*args, **kwargs)
+                t2 = time()
+                av += (t2 - t1) / n
+            print('The function {.__name__} took {}'.format(f, round(av, 3)) +
+                  'seconds to run in an average of {}'.format(n))
+            return rf
+        return make_average
+    return inner
 
 
 class Node():
@@ -25,13 +63,10 @@ class Huffman():
         '''
         We assume that the file is in the same folder as the program, and an
         encoding of utf8.
-
         The variable self.nodes will be the tree that caracterizes the
         Huffman code.
-
         The charDist variable will be the character distribution probability
         of the file.
-
         The HuffmanTable variable will be the Huffman dictionary containing
         each character and its codeword.
         '''
@@ -45,18 +80,13 @@ class Huffman():
     def probDist(self):
         '''
         To count the words we follow the next method:
-
         1. We open the txt file in the variable text.
-
         2. We take the first character and we count how many times this
         character appears.
-
         3. We add the character and its count number to the charDist
         dictionary.
-
         4. We delete the character from text. Return to point 2 until text
         is an empty string.
-
         5. Finally the charDist is returned.
         '''
 
@@ -124,20 +154,17 @@ class Huffman():
                 else:
                     output.write(';.'.encode(self.encoding))
 
+    @timer
     def compressFile(self, outputname=None, getDict=None):
         '''
         Here we will compress the file using the following steps:
-
         1. Open the file in the variable called text, and subsitute
         each character in text for its codeword using self.HuffmanTable.
         This new string is called bitstring.
-
         2. If the length of the bitstring is not multiple of 8, add the
         zeros at the end of the string to ensure len(bitstring) % 8 = 0.
-
         3. Split bitstring in parts of 8 bits, and create a bytearray from
         this.
-
         4. Finally, open the file in 'wb' mode and write the bytestring.
         '''
 
@@ -174,20 +201,17 @@ class Huffman():
         if getDict:
             return self.HuffmanTable
 
-    def decompress(self, outputname=None):
+    @timer
+    def decompressFile(self, outputname=None):
         '''
         Here we will decompress the file using the following methods:
-
         1. Get the dictionary.
-
         2. Find the length of the shorted codeword.
-
         3. Open the file and substitute all codewords for its character.
-
         4. Write the translated codeword to the new file.
         '''
 
-        t1 = time.clock()
+        # t1 = time.clock()
         filename, _ = os.path.splitext(self.file)
         if outputname:
             outputFile = self.path + outputname
@@ -212,7 +236,7 @@ class Huffman():
         padding = int(bitsarray[:8], 2)
         bitsarray = bitsarray[8 + padding:]
 
-        t2 = time.clock()
+        # t2 = time.clock()
         codewords = ''
         decompressed = []
         for bit in bitsarray:
@@ -225,8 +249,8 @@ class Huffman():
         with open(outputFile, 'w', encoding=self.encoding) as output:
             output.write(decompressed)
 
-        t3 = time.clock()
-        print(t3 - t2, t2 - t1)
+        # t3 = time.clock()
+        # print(t3 - t2, t2 - t1)
 
     def decompress2(self, outputname=None):
         '''
@@ -241,7 +265,8 @@ class Huffman():
             outputFile = filename + '_decompressed.txt'
 
         with open(self.file, 'rb') as inputfile, open(
-                outputFile, 'w', encoding=self.encoding, newline='\n') as output:
+                outputFile, 'w', encoding=self.encoding,
+                newline='\n') as output:
 
             # We first read and build the dictionary!
             dictionary = b''

@@ -1,6 +1,44 @@
-import time
+from time import time
 import os
 from math import log, ceil
+
+
+def timer(f):
+    '''
+    This function will be used as a decorator
+    to show the how lang takes a function to run
+
+    '''
+    def inner_function(*args, **kwargs):
+        t1 = time()
+        rf = f(*args, **kwargs)
+        t2 = time()
+        print('{.__name__} has been executed in {} seconds'.format(
+            f, round(t2 - t1, 3)))
+        return rf
+    return inner_function
+
+
+def average(n):
+    '''
+    This function will be used as a decorator to
+    calculate how long takes a function (in an
+    average of n) to run
+
+    '''
+    def inner(f):
+        def make_average(*args, **kwargs):
+            av = 0
+            for _ in range(n):
+                t1 = time()
+                rf = f(*args, **kwargs)
+                t2 = time()
+                av += (t2 - t1) / n
+            print('The function {.__name__} took {}'.format(f, round(av, 3)) +
+                  'seconds to run in an average of {}'.format(n))
+            return rf
+        return make_average
+    return inner
 
 
 class LempelZiv():
@@ -10,12 +48,11 @@ class LempelZiv():
         self.table = {''.encode(encoding): 0}
         self.encoding = encoding
 
+    @timer
     def compressFile(self, outputname=None, getDict=None):
         '''
         Here we will compress the file following the next steps:
-
         1. Open the file and encode it. We will work on a bytes string.
-
         2. We apply thel LZ algorithm on the bytes string:
             a) We initialize the dictionary (self.table) with an empty
             bytearray. We set this as the position 0.
@@ -28,11 +65,9 @@ class LempelZiv():
             subsegment to self.table.
             NOTE: A single character has prefix '', which
             is an empty bytearray whose position is 0 as mentioned before.
-
         3. Finally, we look how many positions we found and how many bits
         are needed to write these positions in binary. With this we can set
         the same bit length for each element of compressed.
-
         4. We join all elements of comressed in a bitstring, then we convert it
         to bytes to write the compressed file.
         '''
@@ -41,7 +76,7 @@ class LempelZiv():
         if outputname:
             outputFile = self.path + outputname
         else:
-            outputFile = filename + '_decompressed.bin'
+            outputFile = filename + '.bin'
 
         # with open(self.file, 'r', encoding=self.encoding) as output:
         #     text = output.read().encode(self.encoding)
@@ -53,7 +88,7 @@ class LempelZiv():
         start = 0
         n_data = len(text) + 1
         compressed = []
-        t1 = time.time()
+        # t1 = time()
         while True:
             for i in range(1, n_data - start):
                 w = text[start:start + i]
@@ -73,14 +108,14 @@ class LempelZiv():
                     pos = self.table[w[:-1]]
                     compressed.append(bin(pos)[2:] + bin(w[-1])[2:].zfill(8))
                 break
-        t2 = time.time()
+        # t2 = time()
 
         # n_bits is the number of bits needed to write in binary the n postions
         n_bits = int(log(len(self.table), 2)) + 1
 
         bitstring = ''.join([bits.zfill(n_bits + 8) for bits in compressed])
-        t3 = time.time()
-        print(t3 - t2, t2 - t1)
+        # t3 = time()
+        # print(t3 - t2, t2 - t1)
 
         # We add the padding to make len(bitstring) % 8 == 0:
         extraPad = 8 - len(bitstring) % 8 if len(bitstring) % 8 != 0 else 0
@@ -102,15 +137,13 @@ class LempelZiv():
         if getDict is True:
             return self.table
 
-    def decompress(self, outputname=None):
+    @timer
+    def decompressFile(self, outputname=None):
         '''
         Here we will decompress the file:
-
         1. Read the n_bits used to write in binary each position.
-
         2. Read the extraPad and remove the zeros added to make
         len(bitstring) % 8 = 0.
-
         3. Knowing n_bits and knowing that each character is 8 bits
         long, read the encoded file in intervals of n_bits + 8, where
         the first n_bits will be the position (pos) and the next 8 bits
@@ -147,7 +180,8 @@ class LempelZiv():
             text.append(characters)
             keys[len(keys)] = characters
 
-        with open(outputFile, 'w', encoding=self.encoding, newline='\n') as output:
+        with open(outputFile, 'w', encoding=self.encoding,
+                  newline='\n') as output:
             text = b''.join(text)
             text = text.decode(self.encoding)
             output.write(text)

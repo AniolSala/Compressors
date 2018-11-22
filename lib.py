@@ -2,18 +2,32 @@ from time import time
 from subprocess import check_output
 import platform
 
+
 def assert_equals(file1, file2, path=''):
+    '''
+    Function that compares if two files are equal using
+    the shell of the OS of the user
+    '''
+
+    f1, f2 = path + file1, path + file2
+
     if platform.win32_ver()[0]:
-        print('\n', check_output("FC {} {}".format(path + file1, path +
-                                             file2), shell=True).decode())
+        print('\n', check_output("FC {} {}".format(f1, f2),
+                                 shell=True).decode())
+
     elif platform.linux_distribution()[0] or platform.mac_ver()[0]:
-        print('\n', check_output("diff {} {}".format(path + file1, path +
-                                               file2), shell=True).decode())
+        print('\n', check_output("diff {} {}".format(f1, f2),
+                                 shell=True).decode())
+
+    else:
+        raise Warning(
+            'Unknown operative system. Comparison could not be done.')
+
 
 def timer(f):
     '''
-    This function will be used as a decorator
-    to show the how lang takes a function to run
+    Decorator that prints the time of execution
+    of a given function
 
     '''
     def inner_function(*args, **kwargs):
@@ -28,9 +42,8 @@ def timer(f):
 
 def average(n):
     '''
-    This function will be used as a decorator to
-    calculate how long takes a function (in an
-    average of n) to run
+    Decorator that executes the function n times
+    and print its average time of execution.
 
     '''
     def inner(f):

@@ -162,14 +162,14 @@ class Huffman():
         if getDict:
             return self.HuffmanTable
 
-    def decompressFile(self, outputname=None):
+    def decompressFileOriginal(self, outputname=None):
         '''
         Here we will decompress the file using the following methods:
         1. Get the dictionary.
         2. Find the length of the shorted codeword.
         3. Open the file and substitute all codewords for its character.
         4. Write the translated codeword to the new file.
-        
+
         '''
 
         # t1 = time.clock()
@@ -213,21 +213,18 @@ class Huffman():
         # t3 = time.clock()
         # print(t3 - t2, t2 - t1)
 
-    def decompress2(self, outputname=None):
+    def decompressFile(self, outputname=None):
         '''
         Alternative decompression (more efficient than decompress method)
         '''
 
-        # t1 = time.time()
         filename, _ = os.path.splitext(self.file)
         if outputname:
             outputFile = self.path + outputname
         else:
             outputFile = filename + '_decompressed.txt'
 
-        with open(self.file, 'rb') as inputfile, open(
-                outputFile, 'w', encoding=self.encoding,
-                newline='\n') as output:
+        with open(self.file, 'rb') as inputfile:
 
             # We first read and build the dictionary!
             dictionary = b''
@@ -240,20 +237,21 @@ class Huffman():
             # We now read the bytearray
             extraPad = int.from_bytes(inputfile.read(1), 'big')
             b = inputfile.read()
-            n_bytes = len(b)
-            bitstring = bin(int.from_bytes(b, 'big'))[2:].zfill(n_bytes * 8)
-            bitstring = bitstring[extraPad:]
 
-            # t2 = time.time()
-            # We now translate the codewords to the original characters:
-            codewords = ''
-            decompressed = []
-            for bit in bitstring:
-                codewords += bit
-                if codewords in dictionary:
-                    decompressed.append(dictionary[codewords])
-                    codewords = ''
+        n_bytes = len(b)
+        bitstring = bin(int.from_bytes(b, 'big'))[2:].zfill(n_bytes * 8)
+        bitstring = bitstring[extraPad:]
 
-            decompressed = ''.join(decompressed)
+        # We now translate the codewords to the original characters:
+        codewords = ''
+        decompressed = []
+        for bit in bitstring:
+            codewords += bit
+            if codewords in dictionary:
+                decompressed.append(dictionary[codewords])
+                codewords = ''
 
+        decompressed = ''.join(decompressed)
+
+        with open(outputFile, 'w', encoding=self.encoding, newline='\n') as output:
             output.write(decompressed)

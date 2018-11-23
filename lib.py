@@ -30,6 +30,7 @@ def timer(f):
     of a given function
 
     '''
+
     def inner_function(*args, **kwargs):
         t1 = time()
         rf = f(*args, **kwargs)
@@ -46,6 +47,7 @@ def average(n):
     and print its average time of execution.
 
     '''
+    
     def inner(f):
         def make_average(*args, **kwargs):
             av = 0

@@ -36,7 +36,7 @@ def main():
     file_name = 'quijote_campus'  # File name without extension!
 
     # Choosing the compressor (LempelZiv or Huffman)
-    compressor = 'LempelZiv'
+    compressor = 'Huffman'
 
     # Compressing the file
     compress(compressor, filename=file_name + '.txt', path=path_to_files)

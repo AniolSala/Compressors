@@ -1,17 +1,16 @@
 from time import time
 import os
 from math import log, ceil
-
+import numpy as np
 
 
 class LempelZiv():
-    def __init__(self, filename, path=os.getcwd(), encoding='utf-8'):
-        self.path = path + '\\'
-        self.file = self.path + filename
+    def __init__(self, filename, encoding='utf-8'):
+        self.file = filename
         self.table = {''.encode(encoding): 0}
         self.encoding = encoding
 
-    def compressFile(self, outputname=None, getDict=None):
+    def compressFile2(self, outputname=None, getDict=None):
         '''
         Here we will compress the file following the next steps:
         1. Open the file and encode it. We will work on a bytes string.
@@ -36,7 +35,7 @@ class LempelZiv():
 
         filename, _ = os.path.splitext(self.file)
         if outputname:
-            outputFile = self.path + outputname
+            outputFile = outputname
         else:
             outputFile = filename + '.bin'
 
@@ -99,6 +98,64 @@ class LempelZiv():
         if getDict is True:
             return self.table
 
+    def compressFile(self, outputname=None):
+        '''
+        Alternative compressing method method
+
+        '''
+
+        filename, _ = os.path.splitext(self.file)
+        if outputname:
+            outputFile = outputname
+        else:
+            outputFile = filename + '.bin'
+
+        with open(self.file, 'rb') as output:
+            text = output.read()
+
+        # text = [byte.to_bytes(1, 'big') for byte in bytestring]
+        # t1 = time()
+
+        compressed = []
+        token = b''
+        for i in range(len(text)):
+            byte = text[i]
+            token += byte.to_bytes(1, 'big')
+            if token not in self.table:
+                pos = self.table[token[:-1]]
+                codeword = bin(pos)[2:] + bin(byte)[2:].zfill(8)
+                self.table[token] = len(self.table)
+                compressed.append(codeword)
+                token = b''
+
+        # If the last bytes have not been included (and so token is not empty):
+        if token:
+            pos = self.table[token[:-1]]
+            codeword = bin(pos)[2:] + bin(byte)[2:].zfill(8)
+            self.table[token] = len(self.table)
+            compressed.append(codeword)
+
+        # t2 = time()
+        # print(t2 - t1)
+        n_bits = int(log(len(self.table), 2)) + 1
+
+        bitstring = ''.join([bits.zfill(n_bits + 8) for bits in compressed])
+
+        # We add the padding to make len(bitstring) % 8 == 0:
+        extraPad = 8 - len(bitstring) % 8 if len(bitstring) % 8 != 0 else 0
+        bitstring = bitstring.zfill(len(bitstring) + extraPad)
+
+        # We pass the bitstring to bytes to write the file:
+        encoded = int(bitstring, 2).to_bytes(
+            int(len(bitstring) / 8), 'big')
+
+        # We write the file
+        with open(outputFile, 'wb') as output:
+            # First we write the n_bits to be able to decompress the file.
+            output.write(n_bits.to_bytes(ceil(n_bits / 256), 'big'))
+            output.write(extraPad.to_bytes(1, 'big'))
+            output.write(encoded)
+
     def decompressFile(self, outputname=None):
         '''
         Here we will decompress the file:
@@ -113,7 +170,7 @@ class LempelZiv():
 
         filename, _ = os.path.splitext(self.file)
         if outputname:
-            outputFile = self.path + outputname
+            outputFile = outputname
         else:
             outputFile = filename + '_decompressed.txt'
 

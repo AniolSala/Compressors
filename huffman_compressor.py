@@ -21,7 +21,7 @@ class Node():
 
 
 class Huffman():
-    def __init__(self, filename, path=os.getcwd(), encoding='utf-8'):
+    def __init__(self, filename, encoding='utf-8'):
         '''
         We assume that the file is in the same folder as the program, and an
         encoding of utf8.
@@ -32,8 +32,7 @@ class Huffman():
         The HuffmanTable variable will be the Huffman dictionary containing
         each character and its codeword.
         '''
-        self.path = path + '\\'
-        self.file = self.path + filename
+        self.file = filename
         self.encoding = encoding
         self.charDist = {}
         self.tree = []
@@ -53,7 +52,8 @@ class Huffman():
         '''
 
         with open(self.file, 'r', encoding=self.encoding) as output:
-            self.charDist = dict(Counter(output.read()))
+            words = output.read()
+            self.charDist = dict(Counter(words))
 
         self.charDist = dict(sorted(self.charDist.items(),
                                     key=lambda x: x[1], reverse=True))
@@ -64,11 +64,12 @@ class Huffman():
         on this tree'''
 
         tempnodes = []
-        self.probDist()
-        for val in self.charDist.values():
-            node = Node(weight=val)
-            tempnodes.append(node)
-            self.tree.append(node)
+        with open(self.file, 'r', encoding=self.encoding) as inputfile:
+            text = inputfile.read()
+        self.charDist = dict(Counter(text))
+
+        self.tree = [Node(weight=val) for val in self.charDist.values()]
+        tempnodes = self.tree.copy()
 
         while len(tempnodes) > 1:
             # We build a father node and we add it to the tree list:
@@ -85,10 +86,8 @@ class Huffman():
                 node.c[0].s = node.s + '0'
                 node.c[1].s = node.s + '1'
 
-        i = 0
-        for key in self.charDist:
-            self.HuffmanTable[key] = self.tree[i].s
-            i += 1
+        self.HuffmanTable = dict([[key, self.tree[i].s]
+                                  for i, key in enumerate(self.charDist)])
 
     def writeDict(self, filename=None, dictionary=None):
         '''
@@ -118,29 +117,43 @@ class Huffman():
 
     def compressFile(self, outputname=None, getDict=None):
         '''
-        Here we will compress the file using the following steps:
-        1. Open the file in the variable called text, and subsitute
-        each character in text for its codeword using self.HuffmanTable.
-        This new string is called bitstring.
-        2. If the length of the bitstring is not multiple of 8, add the
-        zeros at the end of the string to ensure len(bitstring) % 8 = 0.
-        3. Split bitstring in parts of 8 bits, and create a bytearray from
-        this.
-        4. Finally, open the file in 'wb' mode and write the bytestring.
+        Function to compress the file.
         '''
 
         filename, _ = os.path.splitext(self.file)
         if outputname:
-            outputFile = self.path + outputname
+            outputFile = outputname
         else:
             outputFile = filename + '.bin'
 
-        # 1. We build the HuffmanTable and create the bitstring.
-        self.buildTable()
-        with open(self.file, 'r', encoding=self.encoding) as output:
-            text = output.read()
-            codeWordArray = [self.HuffmanTable[x] for x in text]
-            bitstring = ''.join(codeWordArray)
+        tempnodes = []
+        with open(self.file, 'r', encoding=self.encoding) as inputfile:
+            text = inputfile.read()
+        self.charDist = dict(Counter(text))
+
+        self.tree = [Node(weight=val) for val in self.charDist.values()]
+        tempnodes = self.tree.copy()
+
+        while len(tempnodes) > 1:
+            # We build a father node and we add it to the tree list:
+            fnode = Node(childs=[tempnodes[-2], tempnodes[-1]])
+            self.tree.append(fnode)
+            # We delete the last two nodes of tempnodes and add the new one:
+            tempnodes.remove(tempnodes[-1])
+            tempnodes[-1] = fnode
+            # We sort tempnodes to heaviest to lightest:
+            tempnodes = sorted(tempnodes, key=lambda x: x.w, reverse=True)
+
+        for node in self.tree[::-1]:
+            if len(node.c) == 2:
+                node.c[0].s = node.s + '0'
+                node.c[1].s = node.s + '1'
+
+        self.HuffmanTable = dict([[key, self.tree[i].s]
+                                  for i, key in enumerate(self.charDist)])
+
+        codeWordArray = [self.HuffmanTable[x] for x in text]
+        bitstring = ''.join(codeWordArray)
 
         # 2. Adding extra padding to force len(coded_file) % 8 == 0
         extraPad = 8 - len(bitstring) % 8 if len(bitstring) % 8 != 0 else 0
@@ -150,8 +163,7 @@ class Huffman():
         bitstring = padded_info + bitstring
 
         # 3. Split bitstring in parts of 8 bits and create the bytearray
-        b = bytearray([int(bitstring[i:i + 8], 2)
-                       for i in range(0, len(bitstring), 8)])
+        b = int(bitstring, 2).to_bytes(int(len(bitstring) / 8), 'big')
 
         # 4. Write the bytearray in the new file:
         self.writeDict(outputFile)
@@ -162,7 +174,7 @@ class Huffman():
         if getDict:
             return self.HuffmanTable
 
-    def decompressFileOriginal(self, outputname=None):
+    def decompressFile(self, outputname=None):
         '''
         Here we will decompress the file using the following methods:
         1. Get the dictionary.
@@ -172,59 +184,14 @@ class Huffman():
 
         '''
 
-        # t1 = time.clock()
         filename, _ = os.path.splitext(self.file)
         if outputname:
-            outputFile = self.path + outputname
+            outputFile = outputname
         else:
             outputFile = filename + '_decompressed.txt'
 
-        with open(self.file, 'rb') as inputfile:
-
-            # We first read and build the dictionary!
-            dictionary = b''
-            while b'\n\n' not in dictionary:
-                dictionary += inputfile.read(1)
-            dictionary = dictionary.decode(self.encoding)[:-2]
-            dictionary = dictionary.split(';.')
-            dictionary = dict([element.split(':.') for element in dictionary])
-
-            # We now read the bytearray
-            b = inputfile.read()
-
-        bitsarray = [bin(x)[2:].zfill(8) for x in b]
-        bitsarray = ''.join(bitsarray)
-        padding = int(bitsarray[:8], 2)
-        bitsarray = bitsarray[8 + padding:]
-
-        # t2 = time.clock()
-        codewords = ''
-        decompressed = []
-        for bit in bitsarray:
-            codewords += bit
-            if codewords in dictionary:
-                decompressed.append(dictionary[codewords])
-                codewords = ''
-        decompressed = ''.join(decompressed)
-
-        with open(outputFile, 'w', encoding=self.encoding) as output:
-            output.write(decompressed)
-
-        # t3 = time.clock()
-        # print(t3 - t2, t2 - t1)
-
-    def decompressFile(self, outputname=None):
-        '''
-        Alternative decompression (more efficient than decompress method)
-        '''
-
-        filename, _ = os.path.splitext(self.file)
-        if outputname:
-            outputFile = self.path + outputname
-        else:
-            outputFile = filename + '_decompressed.txt'
-
-        with open(self.file, 'rb') as inputfile:
+        with open(self.file, 'rb') as inputfile,\
+                open(outputFile, 'w', encoding=self.encoding, newline='\n') as output:
 
             # We first read and build the dictionary!
             dictionary = b''
@@ -238,20 +205,60 @@ class Huffman():
             extraPad = int.from_bytes(inputfile.read(1), 'big')
             b = inputfile.read()
 
-        n_bytes = len(b)
-        bitstring = bin(int.from_bytes(b, 'big'))[2:].zfill(n_bytes * 8)
-        bitstring = bitstring[extraPad:]
+            n_bytes = len(b)
+            bitstring = bin(int.from_bytes(b, 'big'))[2:].zfill(n_bytes * 8)
+            bitstring = bitstring[extraPad:]
 
-        # We now translate the codewords to the original characters:
-        codewords = ''
-        decompressed = []
-        for bit in bitstring:
-            codewords += bit
-            if codewords in dictionary:
-                decompressed.append(dictionary[codewords])
-                codewords = ''
+            # We now translate the codewords to the original characters:
+            decompressed = []
+            token = ''
+            for bit in bitstring:
+                token += bit
+                if token in dictionary:
+                    decompressed.append(dictionary[token])
+                    token = ''
 
-        decompressed = ''.join(decompressed)
+            output.write(''.join(decompressed))
 
-        with open(outputFile, 'w', encoding=self.encoding, newline='\n') as output:
+    def decompressFile2(self, outputname=None):
+        '''
+        Alternative decompression (more efficient than decompress method)
+        '''
+
+        filename, _ = os.path.splitext(self.file)
+        if outputname:
+            outputFile = outputname
+        else:
+            outputFile = filename + '_decompressed.txt'
+
+        with open(self.file, 'rb') as inputfile, open(outputFile,
+                                                      'w', encoding=self.encoding, newline='\n') as output:
+
+            # We first read and build the dictionary!
+            dictionary = b''
+            while b'\n\n' not in dictionary:
+                dictionary += inputfile.read(1)
+            dictionary = dictionary.decode(self.encoding)[:-2]
+            dictionary = dictionary.split(';.')
+            dictionary = dict([element.split(':.') for element in dictionary])
+
+            # We now read the bytearray
+            extraPad = int.from_bytes(inputfile.read(1), 'big')
+            b = inputfile.read()
+
+            n_bytes = len(b)
+            bitstring = bin(int.from_bytes(b, 'big'))[2:].zfill(n_bytes * 8)
+            bitstring = bitstring[extraPad:]
+
+            # We now translate the codewords to the original characters:
+            codewords = ''
+            decompressed = []
+            for bit in bitstring:
+                codewords += bit
+                if codewords in dictionary:
+                    decompressed.append(dictionary[codewords])
+                    codewords = ''
+
+            decompressed = ''.join(decompressed)
+
             output.write(decompressed)

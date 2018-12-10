@@ -3,13 +3,19 @@ from subprocess import check_output
 import platform
 
 
-def assert_equals(file1, file2, path=''):
+def assert_equals(file1, file2):
     '''
     Function that compares if two files are equal using
     the shell of the OS of the user
+
+    It takes three arguments:
+
+    The two files to compare (file1, file2) and the path where
+    these files are ubicated.
+
     '''
 
-    f1, f2 = path + file1, path + file2
+    f1, f2 = file1, file2
 
     if platform.win32_ver()[0]:
         print('\n', check_output("FC {} {}".format(f1, f2),
@@ -47,7 +53,7 @@ def average(n):
     and print its average time of execution.
 
     '''
-    
+
     def inner(f):
         def make_average(*args, **kwargs):
             av = 0
@@ -56,7 +62,7 @@ def average(n):
                 rf = f(*args, **kwargs)
                 t2 = time()
                 av += (t2 - t1) / n
-            print('The function {.__name__} took {}'.format(f, round(av, 3)) +
+            print('The function {.__name__} took {} '.format(f, round(av, 3)) +
                   'seconds to run in an average of {}'.format(n))
             return rf
         return make_average

@@ -4,6 +4,7 @@ from lib import timer, average, assert_equals
 import os
 
 
+# @average(50)
 @timer
 def compress(compressor, *args, **kwargs):
     if compressor == 'LempelZiv':
@@ -16,6 +17,7 @@ def compress(compressor, *args, **kwargs):
     file_to_compress.compressFile()
 
 
+# @average(10)
 @timer
 def decompress(compressor, *args, **kwargs):
     if compressor == 'LempelZiv':
@@ -28,27 +30,24 @@ def decompress(compressor, *args, **kwargs):
     file_to_decompress.decompressFile()
 
 
-@timer
+# @timer
 def main():
     # Especify the directory where we have the files
-    files_directory = '\\Files'
-    path_to_files = os.getcwd() + files_directory
     file_name = 'quijote_campus'  # File name without extension!
 
     # Choosing the compressor (LempelZiv or Huffman)
     compressor = 'Huffman'
+    # compressor = 'LempelZiv'
 
     # Compressing the file
-    compress(compressor, filename=file_name + '.txt', path=path_to_files)
+    compress(compressor, filename=file_name + '.txt')
 
     # Decompressing the file
     decompress(compressor, filename=file_name +
-               '.bin', path=path_to_files)
+               '.bin')
 
     # Make sure original and decompressed files are equal:
-    assert_equals(file_name + '.txt', file_name + '_decompressed.txt',
-                  ".{}\\".format(files_directory))
-
+    assert_equals(file_name + '.txt', file_name + '_decompressed.txt')
 
 if __name__ == '__main__':
     main()

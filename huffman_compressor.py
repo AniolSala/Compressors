@@ -38,57 +38,6 @@ class Huffman():
         self.tree = []
         self.HuffmanTable = {}
 
-    def probDist(self):
-        '''
-        To count the words we follow the next method:
-        1. We open the txt file in the variable text.
-        2. We take the first character and we count how many times this
-        character appears.
-        3. We add the character and its count number to the charDist
-        dictionary.
-        4. We delete the character from text. Return to point 2 until text
-        is an empty string.
-        5. Finally the charDist is returned.
-        '''
-
-        with open(self.file, 'r', encoding=self.encoding) as output:
-            words = output.read()
-            self.charDist = dict(Counter(words))
-
-        self.charDist = dict(sorted(self.charDist.items(),
-                                    key=lambda x: x[1], reverse=True))
-
-    def buildTable(self):
-        '''Here we will build the 'tree', this is, the collection of
-        nodes of the huffman code. The codewords will be assigned based
-        on this tree'''
-
-        tempnodes = []
-        with open(self.file, 'r', encoding=self.encoding) as inputfile:
-            text = inputfile.read()
-        self.charDist = dict(Counter(text))
-
-        self.tree = [Node(weight=val) for val in self.charDist.values()]
-        tempnodes = self.tree.copy()
-
-        while len(tempnodes) > 1:
-            # We build a father node and we add it to the tree list:
-            fnode = Node(childs=[tempnodes[-2], tempnodes[-1]])
-            self.tree.append(fnode)
-            # We delete the last two nodes of tempnodes and add the new one:
-            tempnodes.remove(tempnodes[-1])
-            tempnodes[-1] = fnode
-            # We sort tempnodes to heaviest to lightest:
-            tempnodes = sorted(tempnodes, key=lambda x: x.w, reverse=True)
-
-        for node in self.tree[::-1]:
-            if len(node.c) == 2:
-                node.c[0].s = node.s + '0'
-                node.c[1].s = node.s + '1'
-
-        self.HuffmanTable = dict([[key, self.tree[i].s]
-                                  for i, key in enumerate(self.charDist)])
-
     def writeDict(self, filename=None, dictionary=None):
         '''
         Here we will write the dictionary at the beginning of

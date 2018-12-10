@@ -120,11 +120,11 @@ class Huffman():
         Function to compress the file.
         '''
 
-        filename, _ = os.path.splitext(self.file)
         if outputname:
             outputFile = outputname
         else:
-            outputFile = filename + '.bin'
+            name, _ = os.path.splitext(self.file)
+            outputFile = name + '.bin'
 
         tempnodes = []
         with open(self.file, 'r', encoding=self.encoding) as inputfile:
@@ -184,10 +184,10 @@ class Huffman():
 
         '''
 
-        filename, _ = os.path.splitext(self.file)
         if outputname:
             outputFile = outputname
         else:
+            filename, _ = os.path.splitext(self.file)
             outputFile = filename + '_decompressed.txt'
 
         with open(self.file, 'rb') as inputfile,\

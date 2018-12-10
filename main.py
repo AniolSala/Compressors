@@ -33,21 +33,23 @@ def decompress(compressor, *args, **kwargs):
 # @timer
 def main():
     # Especify the directory where we have the files
-    file_name = 'quijote_campus'  # File name without extension!
+    original = '.\\Files\\quijote_campus.txt'
+    compressed = '.\\Files\\quijote_campus.bin'
+    decompressed = '.\\Files\\quijote_campus_decompressed.txt'
 
     # Choosing the compressor (LempelZiv or Huffman)
     compressor = 'Huffman'
     # compressor = 'LempelZiv'
 
     # Compressing the file
-    compress(compressor, filename=file_name + '.txt')
+    compress(compressor, filename=original)
 
     # Decompressing the file
-    decompress(compressor, filename=file_name +
-               '.bin')
+    decompress(compressor, filename=compressed)
 
     # Make sure original and decompressed files are equal:
-    assert_equals(file_name + '.txt', file_name + '_decompressed.txt')
+    assert_equals(original, decompressed)
+
 
 if __name__ == '__main__':
     main()

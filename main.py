@@ -33,9 +33,9 @@ def decompress(compressor, *args, **kwargs):
 # @timer
 def main():
     # Especify the directory where we have the files
-    original = '.\\Files\\quijote_campus.txt'
-    compressed = '.\\Files\\quijote_campus.bin'
-    decompressed = '.\\Files\\quijote_campus_decompressed.txt'
+    original = 'quijote_campus.txt'
+    compressed = 'quijote_campus.bin'
+    decompressed = 'quijote_campus_decompressed.txt'
 
     # Choosing the compressor (LempelZiv or Huffman)
     compressor = 'Huffman'
